@@ -24,7 +24,7 @@
 
 ---
 
-## 1. Why This Project Exists
+## 1. Project Goal
 
 This project demonstrates building a production-grade observability platform covering:
 
