@@ -1,0 +1,91 @@
+# ============================================================================
+# OpenTelemetry Collector - Centralised Observability Configuration
+# ============================================================================
+# Version-controlled, peer-reviewed, deployed programmatically.
+# ============================================================================
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: "0.0.0.0:4317"
+      http:
+        endpoint: "0.0.0.0:4318"
+
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: "transfer-api"
+          scrape_interval: 15s
+          static_configs:
+            - targets: ["transfer-api:8080"]
+          metrics_path: "/metrics"
+        - job_name: "pricing-service"
+          scrape_interval: 15s
+          static_configs:
+            - targets: ["pricing-service:8081"]
+          metrics_path: "/metrics"
+        - job_name: "notification-service"
+          scrape_interval: 15s
+          static_configs:
+            - targets: ["notification-service:8082"]
+          metrics_path: "/metrics"
+
+processors:
+  batch:
+    timeout: 5s
+    send_batch_size: 1024
+    send_batch_max_size: 2048
+  resource:
+    attributes:
+      - key: "environment"
+        value: "development"
+        action: upsert
+      - key: "team"
+        value: "observability"
+        action: upsert
+  memory_limiter:
+    check_interval: 5s
+    limit_mib: 512
+    spike_limit_mib: 128
+
+exporters:
+  prometheusremotewrite:
+    endpoint: "http://mimir:9009/api/v1/push"
+    tls:
+      insecure: true
+  loki:
+    endpoint: "http://loki:3100/loki/api/v1/push"
+  otlp/tempo:
+    endpoint: "http://tempo:4317"
+    tls:
+      insecure: true
+  elasticsearch:
+    endpoints: ["http://elasticsearch:9200"]
+    logs_index: "otel-logs"
+    sending_queue:
+      enabled: true
+      num_consumers: 2
+      queue_size: 1000
+  debug:
+    verbosity: basic
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, resource, batch]
+      exporters: [otlp/tempo, debug]
+    metrics:
+      receivers: [otlp, prometheus]
+      processors: [memory_limiter, resource, batch]
+      exporters: [prometheusremotewrite, debug]
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, resource, batch]
+      exporters: [loki, elasticsearch, debug]
+  telemetry:
+    logs:
+      level: info
+    metrics:
+      address: ":8888"

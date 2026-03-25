@@ -1,0 +1,20 @@
+groups:
+  - name: transfer-slos
+    rules:
+      - alert: HighTransferErrorRate
+        expr: |
+          sum(rate(transfer_requests_total{status="error"}[5m]))
+          / sum(rate(transfer_requests_total[5m])) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Transfer error rate > 5%"
+      - alert: HighTransferLatency
+        expr: |
+          histogram_quantile(0.95, rate(transfer_request_duration_seconds_bucket[5m])) > 2
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "p95 latency > 2s"
