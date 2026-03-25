@@ -1138,6 +1138,11 @@ Open http://localhost:3000 (admin/admin).
 - `histogram_quantile(0.95, rate(transfer_request_duration_seconds_bucket[5m]))` -- p95 latency
 - `sum(rate(transfer_requests_total{status="error"}[5m])) / sum(rate(transfer_requests_total[5m]))` -- Error rate
 
+![Grafana Dashboard Example](grafana.png)
+
+- Example: Visualise transfer rates, error rates, and latency percentiles in a single dashboard.
+- Use Explore to correlate logs and traces for a specific transfer by trace ID.
+
 **Logs (Loki):** Explore > Loki datasource
 - `{service_name="pricing-service"} |= "Pricing"`
 - `{service_name="notification-service"} |= "error"`
